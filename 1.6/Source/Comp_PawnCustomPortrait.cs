@@ -2,28 +2,55 @@
 using Verse;
 
 public class Comp_FoxyPawnCustomPortrait : ThingComp {
-	private readonly PawnPortraits storage = new PawnPortraits();
-	public PawnPortraits Storage => storage;
+	private PawnPortraits storage;
+	public PawnPortraits Storage {
+		get {
+			if (storage == null) storage = new PawnPortraits();
+			return storage;
+		}
+	}
+
+	public override void CompTickLong() {
+		Storage.Update(parent as Pawn);
+	}
 
 	public string this[PortraitPosition? position] {
-		get => storage[position];
-		set => storage[position] = value;
+		get => Storage[position];
+		set => Storage[position] = value;
 	}
 
 	public bool HasFilename(PortraitPosition? position) {
-		return storage.HasFilename(position);
+		return Storage.HasFilename(position);
 	}
 
 	public string GetFilename(PortraitPosition? position) {
-		return storage.GetFilename(position);
+		return Storage.GetFilename(position);
 	}
 
 	public void SetFilename(PortraitPosition? position, string value) {
-		storage.SetFilename(position, value);
+		Storage.SetFilename(position, value);
+	}
+
+	private static bool MigrateLegacy(ref PawnPortraits storage) {
+		if (Scribe.mode != LoadSaveMode.LoadingVars) return false;
+		if (Scribe.loader.EnterNode("pawn_portrait")) {
+			// Already migrated
+			Scribe.loader.ExitNode();
+			return false;
+		}
+
+		LegacyPawnPortraits legacy = new LegacyPawnPortraits();
+		legacy.ExposeData();
+
+		if (storage == null) storage = new PawnPortraits();
+		storage.filename = legacy.filename;
+
+		return true;
 	}
 
 	public override void PostExposeData() {
 		base.PostExposeData();
-		storage.ExposeData();
+		if (!MigrateLegacy(ref storage))
+			Scribe_Deep.Look(ref storage, "pawn_portrait");
 	}
 }

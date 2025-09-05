@@ -82,6 +82,7 @@
     <Compile Include="Patch_Mod_ColorCodedMoodBar.cs" />
     <Compile Include="Patch_Mod_LTOColonyGroupsFinal.cs" />
     <Compile Include="PawnPortraits.cs" />
+    <Compile Include="LegacyPawnPortraits.cs" />
     <Compile Include="PortraitCache.cs" />
     <Compile Include="PortraitDrawer.cs" />
     <Compile Include="PortraitPosition.cs" />

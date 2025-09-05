@@ -1,7 +1,7 @@
 ﻿using Verse;
 
 namespace Foxy.CustomPortraits {
-	public class PawnPortraits : IExposable {
+	public class LegacyPawnPortraits : IExposable {
 		public string filename;
 		public string inspector;
 		public string colonistBar;
@@ -67,10 +67,6 @@ namespace Foxy.CustomPortraits {
 						break;
 					}
 			}
-		}
-
-		public void Update(Pawn p) {
-
 		}
 
 		public void ExposeData() {
