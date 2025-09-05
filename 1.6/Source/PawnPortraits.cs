@@ -1,85 +1,102 @@
-﻿using Verse;
+﻿using System.Collections.Generic;
+using Verse;
 
 namespace Foxy.CustomPortraits {
 	public class PawnPortraits : IExposable {
-		public string filename;
-		public string inspector;
-		public string colonistBar;
-		public string topRight;
-		public string actions;
-		public string custom;
-
-		public string this[PortraitPosition? position] {
-			get => GetFilename(position);
-			set => SetFilename(position, value);
+		private List<PortraitCondition> conditions;
+		private List<PortraitCondition> ConditionsList {
+			get {
+				if (conditions == null) conditions = new List<PortraitCondition>();
+				return conditions;
+			}
 		}
+		public IEnumerable<PortraitCondition> Conditions => ConditionsList;
+
+		public bool IsSimple { get; private set; } = false;
+		private PortraitCondition simpleDefault = null;
+		private PortraitCondition simpleInspector = null;
+		private PortraitCondition simpleColonistBar = null;
+		private PortraitCondition simpleTopRight = null;
+		private PortraitCondition simpleActions = null;
+		private PortraitCondition simpleCustom = null;
+
+		private string cacheDefault = null;
+		private string cacheInspector = null;
+		private string cacheColonistBar = null;
+		private string cacheTopRight = null;
+		private string cacheActions = null;
+		private string cacheCustom = null;
 
 		public bool HasFilename(PortraitPosition? position) {
-			if (!position.HasValue) return filename != null;
-			switch (position.Value) {
-				case PortraitPosition.Inspector: return inspector != null;
-				case PortraitPosition.ColonistBar: return colonistBar != null;
-				case PortraitPosition.TopRight: return topRight != null;
-				case PortraitPosition.Actions: return actions != null;
-				case PortraitPosition.Custom: return custom != null;
-				default: return filename != null;
+			return GetFilenameExact(position) != null;
+		}
+		public string GetFilenameExact(PortraitPosition? position) {
+			switch (position) {
+				case PortraitPosition.Inspector: return cacheInspector;
+				case PortraitPosition.ColonistBar: return cacheColonistBar;
+				case PortraitPosition.TopRight: return cacheTopRight;
+				case PortraitPosition.Actions: return cacheActions;
+				case PortraitPosition.Custom: return cacheCustom;
+				default: return cacheDefault;
 			}
 		}
 		public string GetFilename(PortraitPosition? position) {
-			if (!position.HasValue) return filename;
-			switch (position.Value) {
-				case PortraitPosition.Inspector: return inspector ?? filename;
-				case PortraitPosition.ColonistBar: return colonistBar ?? filename;
-				case PortraitPosition.TopRight: return topRight ?? filename;
-				case PortraitPosition.Actions: return actions ?? filename;
-				case PortraitPosition.Custom: return custom ?? filename;
-				default: return filename;
-			}
+			return GetFilenameExact(position) ?? cacheDefault;
 		}
-		public void SetFilename(PortraitPosition? position, string value) {
-			if (!position.HasValue) {
-				filename = value;
-				return;
-			}
-			switch (position.Value) {
-				case PortraitPosition.Inspector: {
-						inspector = value;
-						break;
-					}
-				case PortraitPosition.ColonistBar: {
-						colonistBar = value;
-						break;
-					}
-				case PortraitPosition.TopRight: {
-						topRight = value;
-						break;
-					}
-				case PortraitPosition.Actions: {
-						actions = value;
-						break;
-					}
-				case PortraitPosition.Custom: {
-						custom = value;
-						break;
-					}
-				default: {
-						filename = value;
-						break;
-					}
+		private void CacheFilename(PortraitPosition? position, string value) {
+			switch (position) {
+				case PortraitPosition.Inspector: cacheInspector = value; break;
+				case PortraitPosition.ColonistBar: cacheColonistBar = value; break;
+				case PortraitPosition.TopRight: cacheTopRight = value; break;
+				case PortraitPosition.Actions: cacheActions = value; break;
+				case PortraitPosition.Custom: cacheCustom = value; break;
+				default: cacheDefault = value; break;
 			}
 		}
 
 		public void Update(Pawn p) {
+			if (p == null) return;
+			cacheDefault = null;
+			cacheInspector = null;
+			cacheColonistBar = null;
+			cacheTopRight = null;
+			cacheActions = null;
+			cacheCustom = null;
 
+			foreach (PortraitCondition pc in Conditions) {
+				if (HasFilename(pc.position)) continue;
+				if (!pc.CheckFor(p)) continue;
+				CacheFilename(pc.position, pc.filename);
+			}
+		}
+
+		private PortraitCondition GetSimpleForPosition(PortraitPosition? position) {
+			switch (position) {
+				case PortraitPosition.Inspector: return simpleInspector;
+				case PortraitPosition.ColonistBar: return simpleColonistBar;
+				case PortraitPosition.TopRight: return simpleTopRight;
+				case PortraitPosition.Actions: return simpleActions;
+				case PortraitPosition.Custom: return simpleCustom;
+				default: return simpleDefault;
+			}
+		}
+		public void SetSimple(PortraitPosition? position, string value) {
+			if (!IsSimple) {
+				ConditionsList.Clear();
+				ConditionsList.Add(simpleDefault = new ConstantPortraitCondition(null, null));
+				ConditionsList.Add(simpleInspector = new ConstantPortraitCondition(PortraitPosition.Inspector, null));
+				ConditionsList.Add(simpleColonistBar = new ConstantPortraitCondition(PortraitPosition.ColonistBar, null));
+				ConditionsList.Add(simpleTopRight = new ConstantPortraitCondition(PortraitPosition.TopRight, null));
+				ConditionsList.Add(simpleActions = new ConstantPortraitCondition(PortraitPosition.Actions, null));
+				ConditionsList.Add(simpleCustom = new ConstantPortraitCondition(PortraitPosition.Custom, null));
+				IsSimple = true;
+			}
+			GetSimpleForPosition(position).filename = value;
+			CacheFilename(position, value);
 		}
 
 		public void ExposeData() {
-			Scribe_Values.Look(ref filename, "portrait");
-			Scribe_Values.Look(ref inspector, "portrait_inspector");
-			Scribe_Values.Look(ref colonistBar, "portrait_colonistBar");
-			Scribe_Values.Look(ref topRight, "portrait_topRight");
-			Scribe_Values.Look(ref actions, "portrait_actions");
-			Scribe_Values.Look(ref custom, "portrait_custom");
+			Scribe_Collections.Look(ref conditions, "pawn_portraits");
 		}
 	}
 }

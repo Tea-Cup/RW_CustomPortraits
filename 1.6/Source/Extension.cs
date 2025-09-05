@@ -82,7 +82,7 @@ namespace Foxy.CustomPortraits {
 				}
 				return pp.HasFilename(position);
 			} else {
-				return pawn.GetComp<Comp_FoxyPawnCustomPortrait>()?.HasFilename(position) ?? false;
+				return pawn.GetComp<Comp_FoxyPawnCustomPortrait>()?.Storage.HasFilename(position) ?? false;
 			}
 		}
 		public static string GetPortraitName(this Pawn pawn, PortraitPosition? position) {
@@ -93,7 +93,7 @@ namespace Foxy.CustomPortraits {
 				}
 				return pp.GetFilename(position);
 			} else {
-				return pawn.GetComp<Comp_FoxyPawnCustomPortrait>()?.GetFilename(position);
+				return pawn.GetComp<Comp_FoxyPawnCustomPortrait>()?.Storage.GetFilename(position);
 			}
 		}
 		public static void SetPortraitName(this Pawn pawn, PortraitPosition? position, string filename) {
@@ -102,9 +102,9 @@ namespace Foxy.CustomPortraits {
 				if (!GameComponent_CustomPortraits.Instance.animals.TryGetValue(pawn.def.defName, out var pp)) {
 					GameComponent_CustomPortraits.Instance.animals.Add(pawn.def.defName, pp = new PawnPortraits());
 				}
-				pp.SetFilename(position, filename);
+				pp.SetSimple(position, filename);
 			} else {
-				pawn.GetComp<Comp_FoxyPawnCustomPortrait>()?.SetFilename(position, filename);
+				pawn.GetComp<Comp_FoxyPawnCustomPortrait>()?.Storage.SetSimple(position, filename);
 				RemoveCachedPortraits(pawn);
 				ModCompatibility.OwlsColonistBarResetCache();
 			}

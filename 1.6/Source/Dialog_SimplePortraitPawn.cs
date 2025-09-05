@@ -61,7 +61,6 @@ namespace Foxy.CustomPortraits {
 				UpdatePositionOptions();
 			}
 
-#if DEBUG
 			bool advanced = false;
 			Widgets.CheckboxLabeled(advRect, Helper.Label("AdvancedPortrait"), ref advanced);
 			if(advanced) {
@@ -69,7 +68,6 @@ namespace Foxy.CustomPortraits {
 				StaticSettings.Advanced = true;
 				Helper.OpenDialog(pawn);
 			}
-#endif
 
 			if (Find.Selector.SingleSelectedThing is Pawn p && p != pawn) {
 				Close();

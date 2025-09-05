@@ -61,7 +61,9 @@
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AdvancedComparison.cs" />
     <Compile Include="Comp_PawnCustomPortrait.cs" />
+    <Compile Include="ConstantPortraitCondition.cs" />
     <Compile Include="DDS.cs" />
     <Compile Include="Dialog_AdvancedPortraitPawn.cs" />
     <Compile Include="Dialog_SimplePortraitPawn.cs" />
@@ -71,6 +73,7 @@
     <Compile Include="Helper.cs" />
     <Compile Include="ModCompatibility.cs" />
     <Compile Include="ModMain.cs" />
+    <Compile Include="MoodPortraitCondition.cs" />
     <Compile Include="Patch_DoDebugOptions.cs" />
     <Compile Include="Patch_DrawColonist.cs" />
     <Compile Include="Patch_DrawGizmoGrid.cs" />
@@ -84,6 +87,7 @@
     <Compile Include="PawnPortraits.cs" />
     <Compile Include="LegacyPawnPortraits.cs" />
     <Compile Include="PortraitCache.cs" />
+    <Compile Include="PortraitCondition.cs" />
     <Compile Include="PortraitDrawer.cs" />
     <Compile Include="PortraitPosition.cs" />
     <Compile Include="PortraitTabPosition.cs" />
