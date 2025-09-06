@@ -109,6 +109,9 @@ namespace Foxy.CustomPortraits {
 				ModCompatibility.OwlsColonistBarResetCache();
 			}
 		}
+		public static PawnPortraits GetPortraits(this Pawn pawn) {
+			return pawn.GetComp<Comp_FoxyPawnCustomPortrait>()?.Storage;
+		}
 		public static Texture2D GetPortraitTexture(this Pawn pawn, PortraitPosition? position) {
 			return PortraitCache.Get(pawn.GetPortraitName(position));
 		}

@@ -4,13 +4,12 @@ using Verse;
 namespace Foxy.CustomPortraits {
 	public class PawnPortraits : IExposable {
 		private List<PortraitCondition> conditions;
-		private List<PortraitCondition> ConditionsList {
+		public List<PortraitCondition> Conditions {
 			get {
 				if (conditions == null) conditions = new List<PortraitCondition>();
 				return conditions;
 			}
 		}
-		public IEnumerable<PortraitCondition> Conditions => ConditionsList;
 
 		public bool IsSimple { get; private set; } = false;
 		private PortraitCondition simpleDefault = null;
@@ -82,13 +81,13 @@ namespace Foxy.CustomPortraits {
 		}
 		public void SetSimple(PortraitPosition? position, string value) {
 			if (!IsSimple) {
-				ConditionsList.Clear();
-				ConditionsList.Add(simpleDefault = new ConstantPortraitCondition(null, null));
-				ConditionsList.Add(simpleInspector = new ConstantPortraitCondition(PortraitPosition.Inspector, null));
-				ConditionsList.Add(simpleColonistBar = new ConstantPortraitCondition(PortraitPosition.ColonistBar, null));
-				ConditionsList.Add(simpleTopRight = new ConstantPortraitCondition(PortraitPosition.TopRight, null));
-				ConditionsList.Add(simpleActions = new ConstantPortraitCondition(PortraitPosition.Actions, null));
-				ConditionsList.Add(simpleCustom = new ConstantPortraitCondition(PortraitPosition.Custom, null));
+				Conditions.Clear();
+				Conditions.Add(simpleDefault = new ConstantPortraitCondition(null, null));
+				Conditions.Add(simpleInspector = new ConstantPortraitCondition(PortraitPosition.Inspector, null));
+				Conditions.Add(simpleColonistBar = new ConstantPortraitCondition(PortraitPosition.ColonistBar, null));
+				Conditions.Add(simpleTopRight = new ConstantPortraitCondition(PortraitPosition.TopRight, null));
+				Conditions.Add(simpleActions = new ConstantPortraitCondition(PortraitPosition.Actions, null));
+				Conditions.Add(simpleCustom = new ConstantPortraitCondition(PortraitPosition.Custom, null));
 				IsSimple = true;
 			}
 			GetSimpleForPosition(position).filename = value;
