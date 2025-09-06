@@ -16,17 +16,24 @@ namespace Foxy.CustomPortraits {
 			if (tex != null) {
 				GUI.DrawTexture(right, tex);
 			} else {
-				GUI.color = filename == null ? borderEmpty : borderError;
+				GUI.color = string.IsNullOrEmpty(filename) ? borderEmpty : borderError;
 				Widgets.DrawBox(right, filename == null ? 1 : 2);
 			}
-			if(Mouse.IsOver(right)) {
+			if (Mouse.IsOver(right)) {
 				GUI.color = hover;
 				GUI.DrawTexture(right, BaseContent.WhiteTex);
 			}
 			GUI.color = Color.white;
 			if (Widgets.ButtonInvisible(right, true)) {
-				// TODO: file selector
-				Log.Message("Click");
+				GUI_FileDialog.QuickSelect(
+					Helper.Label("PortraitFor", p),
+					filename,
+					(s) => {
+						filename = s;
+						Log.Message($"new texture for {p.NameFullColored}: \"{filename}\"");
+						p.GetPortraits().Update(p);
+					}
+				);
 			}
 		}
 

@@ -16,11 +16,11 @@ namespace Foxy.CustomPortraits {
 		public static IEnumerable<string> All => cache.Keys;
 
 		public static Texture2D Get(string filename) {
-			if (filename == null) return null;
+			if (string.IsNullOrEmpty(filename)) return null;
 			return cache.TryGetValue(filename, out Texture2D texture) ? texture : null;
 		}
 		public static bool Has(string filename) {
-			if (filename == null) return false;
+			if (string.IsNullOrEmpty(filename)) return false;
 			return cache.ContainsKey(filename);
 		}
 		public static void Update() {

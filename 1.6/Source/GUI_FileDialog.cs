@@ -40,6 +40,11 @@ namespace Foxy.CustomPortraits {
 				scrollPosition = GUILayout.BeginScrollView(scrollPosition);
 				GUILayout.BeginVertical(GUILayout.ExpandWidth(true));
 				clicked = DrawDir(CurrentDirectory);
+				if (clicked != null) {
+					SelectedPath = clicked;
+				} else {
+					clicked = SelectedPath;
+				}
 				GUILayout.EndVertical();
 				GUILayout.EndScrollView();
 				GUILayout.EndArea();
@@ -79,6 +84,56 @@ namespace Foxy.CustomPortraits {
 				GUI.enabled = true;
 			}
 			return clicked;
+		}
+
+		public static void QuickSelect(string title, string initial, Action<string> callback) {
+			QuickWindow w = new QuickWindow(title, initial, callback);
+			Find.WindowStack.Add(w);
+		}
+
+		private class QuickWindow : Window {
+			private readonly GUI_FileDialog file_dialog = new GUI_FileDialog();
+			private readonly Action<string> callback;
+			public override Vector2 InitialSize => new Vector2(310f, 375f);
+			protected override float Margin => 5f;
+
+			public QuickWindow(string title, string selected, Action<string> callback) {
+				this.callback = callback;
+				file_dialog.SelectedPath = selected;
+				optionalTitle = title;
+				if (!string.IsNullOrEmpty(selected)) {
+					file_dialog.CurrentDirectory = new FileInfo(Path.Combine(PortraitCache.Directory.FullName, selected)).Directory;
+				}
+				PortraitCache.Update();
+			}
+
+			public override void DoWindowContents(Rect inRect) {
+				inRect.SplitHorizontally(inRect.height - 25, out Rect top, out Rect bottom);
+
+				file_dialog.Draw(top);
+
+				float w = inRect.width / 3;
+				Rect left = new Rect(w + 5, bottom.y + 5, w - 10, 20);
+				Rect right = new Rect(w + w + 10, bottom.y + 5, w - 10, 20);
+				if (Widgets.ButtonText(left, Helper.Label("OK"))) {
+					Close();
+				}
+				if (Widgets.ButtonText(right, Helper.Label("Cancel"))) {
+					file_dialog.SelectedPath = null;
+					Close();
+				}
+
+				if (Mouse.IsOver(right)) {
+					GUI.color = new Color(1, 1, 1, 0.5f);
+					GUI.DrawTexture(right, BaseContent.BlackTex);
+					GUI.color = Color.white;
+				}
+			}
+
+			public override void PostClose() {
+				if (file_dialog.SelectedPath == null) return;
+				callback?.Invoke(file_dialog.SelectedPath);
+			}
 		}
 	}
 }
