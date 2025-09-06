@@ -23,6 +23,7 @@ namespace Foxy.CustomPortraits {
 			this.pawn = pawn;
 			if (!string.IsNullOrEmpty(SelectedFile)) {
 				file_dialog.CurrentDirectory = new FileInfo(Path.Combine(PortraitCache.Directory.FullName, SelectedFile)).Directory;
+				file_dialog.SelectedPath = SelectedFile;
 			}
 			PortraitCache.Update();
 			GeneratePositionOptions();
@@ -58,6 +59,7 @@ namespace Foxy.CustomPortraits {
 
 			if (pawn.HasPortraitName(position) && Widgets.ButtonImage(delRect, TexButton.Delete)) {
 				pawn.SetPortraitName(position, null);
+				file_dialog.SelectedPath = null;
 				UpdatePositionOptions();
 			}
 
@@ -66,6 +68,7 @@ namespace Foxy.CustomPortraits {
 			if(advanced) {
 				Close();
 				StaticSettings.Advanced = true;
+				pawn.GetPortraits().SetAdvanced();
 				Helper.OpenDialog(pawn);
 			}
 
@@ -78,6 +81,7 @@ namespace Foxy.CustomPortraits {
 
 		private void OnPositionSelection(PortraitPosition? position) {
 			this.position = position;
+			file_dialog.SelectedPath = pawn.GetPortraits().GetFilenameExact(position);
 		}
 
 		private void GeneratePositionOptions() {

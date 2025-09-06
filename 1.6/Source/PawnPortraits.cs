@@ -93,6 +93,15 @@ namespace Foxy.CustomPortraits {
 			GetSimpleForPosition(position).filename = value;
 			CacheFilename(position, value);
 		}
+		public void SetAdvanced() {
+			IsSimple = false;
+			simpleDefault = null;
+			simpleInspector = null;
+			simpleColonistBar = null;
+			simpleTopRight = null;
+			simpleActions = null;
+			simpleCustom = null;
+		}
 
 		public void ExposeData() {
 			Scribe_Collections.Look(ref conditions, "pawn_portraits");

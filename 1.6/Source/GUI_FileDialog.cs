@@ -7,7 +7,7 @@ namespace Foxy.CustomPortraits {
 	public class GUI_FileDialog {
 		private Vector2 scrollPosition = Vector2.zero;
 		public DirectoryInfo CurrentDirectory { get; set; } = PortraitCache.Directory;
-		public string SelectedPath { get; set; } = "";
+		public string SelectedPath { get; set; } = null;
 
 		private static readonly float itemHeight = 24;
 		private static GUIStyle DirItemContainerStyle { get; } = new GUIStyle() {
