@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using System;
+using System.Collections.Generic;
+using UnityEngine;
 using Verse;
 
 namespace Foxy.CustomPortraits {
@@ -35,8 +37,29 @@ namespace Foxy.CustomPortraits {
 					}
 				);
 			}
+
+			if (Widgets.ButtonText(left.TopPartPixels(20), position.Translate())) {
+				Find.WindowStack.Add(new FloatMenu(GeneratePositionOptions(p)));
+			}
 		}
 
+		private void OnPositionChanged(Pawn p, PortraitPosition? position) {
+			this.position = position;
+			RequestUpdate(p);
+		}
+		private List<FloatMenuOption> GeneratePositionOptions(Pawn p) {
+			List<FloatMenuOption> list = new List<FloatMenuOption> {
+				new FloatMenuOption(Extension.Translate(null), () => OnPositionChanged(p, null))
+			};
+			foreach(PortraitPosition position in Enum.GetValues(typeof(PortraitPosition))) {
+				list.Add(new FloatMenuOption(position.Translate(), () => OnPositionChanged(p, position)));
+			}
+			return list;
+		}
+
+		protected void RequestUpdate(Pawn p) {
+			p.GetPortraits().Update(p);
+		}
 		public virtual string GetTexture(Pawn p) {
 			return filename;
 		}
