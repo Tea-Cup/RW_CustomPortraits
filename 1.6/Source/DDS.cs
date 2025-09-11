@@ -1,7 +1,11 @@
 ﻿using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Diagnostics;
+using System.Linq;
+using System.Text;
 using UnityEngine;
+using Verse;
 
 namespace Foxy.CustomPortraits {
 	// Partial DDS file structure from DirectX 9.0 documentation
@@ -77,11 +81,24 @@ namespace Foxy.CustomPortraits {
 			[MarshalAs(UnmanagedType.U4)]
 			public DDPF dwFlags; // DDPF flags
 			public uint dwFourCC; // Four-character code for format, must have flag DDPF.FourCC
-								  // There's more RGB stuff, but we don't need that.
+			public uint dwRGBBitCount; // For RGB formats, this is the total number of bits in the format. dwFlags should include DDPF.RGB in this case.
+			public uint dwRBitMask; // For RGB formats, this field contains the masks for the red channel
+			public uint dwGBitMask; // For RGB formats, this field contains the masks for the green channel
+			public uint dwBBitMask; // For RGB formats, this field contains the masks for the blue channel
+			public uint dwRGBAlphaBitMask; // For RGB formats, this contains the mask for the alpha channel, if any. dwFlags should include DDPF.AlphaPixels in this case.
 
-			public bool IsDXT1 => dwFlags.HasFlag(DDPF.FourCC) && dwFourCC == 0x31545844; // == "DXT1" in ASCII LE
-			public bool IsDXT5 => dwFlags.HasFlag(DDPF.FourCC) && dwFourCC == 0x35545844; // == "DXT5" in ASCII LE
-			public string StringFourCC => System.Text.Encoding.ASCII.GetString(BitConverter.GetBytes(dwFourCC));
+			[Conditional("DEBUG")]
+			public void PrintDebug() {
+				Log.Message($"[PF] ==============================");
+				Log.Message($"[PF] dwFlags = {dwFlags} (0x{(uint)dwFlags:X8})");
+				Log.Message($"[PF] dwFlags = {Encoding.ASCII.GetString(BitConverter.GetBytes(dwFourCC))} (0x{dwFourCC:X8})");
+				Log.Message($"[PF] dwRGBBitCount = {dwRGBBitCount} (0x({dwRGBBitCount:X8})");
+				Log.Message($"[PF] dwRBitMask = 0x{dwRBitMask:X8}");
+				Log.Message($"[PF] dwGBitMask = 0x{dwGBitMask:X8}");
+				Log.Message($"[PF] dwBBitMask = 0x{dwBBitMask:X8}");
+				Log.Message($"[PF] dwRGBAlphaBitMask = 0x{dwRGBAlphaBitMask:X8}");
+				Log.Message($"[PF] ==============================");
+			}
 		}
 		#endregion
 
@@ -91,32 +108,30 @@ namespace Foxy.CustomPortraits {
 		public int MipMapCount { get; }
 		public int Width => (int)Header.dwWidth;
 		public int Height => (int)Header.dwHeight;
-		public bool IsDXT1 => Header.ddpfPixelFormat.IsDXT1;
-		public bool IsDXT5 => Header.ddpfPixelFormat.IsDXT5;
+
+		private static readonly TextureFormat[] CompressedFormats = new TextureFormat[] {
+			TextureFormat.DXT1,
+			TextureFormat.DXT5,
+			TextureFormat.BC4,
+			TextureFormat.BC5,
+			TextureFormat.BC6H,
+			TextureFormat.BC7
+		};
 
 		public DDS(byte[] data) {
 			Header = HeaderDDS.Parse(data);
 
-			if (IsDXT1) {
-				Format = TextureFormat.DXT1;
-			} else if (IsDXT5) {
-				Format = TextureFormat.DXT5;
-			} else {
-				// Not sure why I'm so pedant about exact wrong format, but I woke up after already writing this
-				if (Header.ddpfPixelFormat.dwFlags.HasFlag(DDPF.FourCC)) {
-					throw new FormatException($"Unsupported pixel format: {Header.ddpfPixelFormat.StringFourCC}");
-				} else if (Header.ddpfPixelFormat.dwFlags.HasFlag(DDPF.RGB)) {
-					// Thankfully I stopped myself before reporting in the exact A_R_G_B_ notation
-					if (Header.ddpfPixelFormat.dwFlags.HasFlag(DDPF.AlphaPixels))
-						throw new FormatException($"Unsupported pixel format: ARGB");
-					else throw new FormatException($"Unsupported pixel format: RGB");
-				} else {
-					throw new FormatException($"Unsupported pixel format: unknown");
-				}
+			TextureFormat? fmt = ParseTextureFormat(Header.ddpfPixelFormat);
+			if(!fmt.HasValue) {
+				Header.ddpfPixelFormat.PrintDebug();
+				throw new FormatException($"Unknown DDS pixel format");
 			}
+			Format = fmt.Value;
 
-			if (Header.dwWidth % 4 != 0 || Header.dwHeight % 4 != 0) {
-				throw new FormatException($"DDS format requires dimensions to be divisable by 4: {Header.dwWidth}x{Header.dwHeight}");
+			if (CompressedFormats.Contains(Format)) {
+				if (Header.dwWidth % 4 != 0 || Header.dwHeight % 4 != 0) {
+					throw new FormatException($"DDS format requires dimensions to be divisable by 4: {Header.dwWidth}x{Header.dwHeight}");
+				}
 			}
 
 			// DDSD_LINEARSIZE is required for compressed formats and DXTn are all compressed
@@ -134,42 +149,97 @@ namespace Foxy.CustomPortraits {
 			MipMapCount = Header.dwFlags.HasFlag(DDSD.MipmapCount) && Header.dwMipMapCount > 1 ? (int)Header.dwMipMapCount : 1;
 		}
 
-		public Texture2D CreateTexture() {
-			Texture2D tex = new Texture2D(2, 2);
-			LoadIntoTexture(tex);
-			return tex;
+		// Took those out of https://learn.microsoft.com/en-us/windows/win32/direct3ddds/dx-graphics-dds-pguide
+		private static readonly uint fourccDXT1 = MakeFourCC("DXT1");
+		private static readonly uint fourccDXT5 = MakeFourCC("DXT5");
+		private static readonly uint fourccYUY2 = MakeFourCC("YUY2");
+		private static readonly uint fourccBC4 = MakeFourCC("BC4U"); // Or is it BC4S? I've no idea.
+		private static readonly uint fourccBC5 = MakeFourCC("ATI2"); // Or is it BC5S? I've no idea either.
+		private static uint MakeFourCC(string s) {
+			byte[] bytes = Encoding.ASCII.GetBytes(s);
+			return (
+				(uint)(bytes[0] << 0) |
+				(uint)(bytes[1] << 8) |
+				(uint)(bytes[2] << 16) |
+				(uint)(bytes[3] << 24)
+			);
 		}
 
-		public void LoadIntoTexture(Texture2D tex) {
-			Texture2D temp = new Texture2D(Width, Height, Format, MipMapCount, false);
-			temp.LoadRawTextureData(DXT);
-			temp.Apply();
+		static DDS() {
+			#if DEBUG
+			Log.Message($"[4CC] DXT1 = {Encoding.ASCII.GetString(BitConverter.GetBytes(fourccDXT1))} (0x{fourccDXT1:X8})");
+			Log.Message($"[4CC] DXT5 = {Encoding.ASCII.GetString(BitConverter.GetBytes(fourccDXT5))} (0x{fourccDXT5:X8})");
+			Log.Message($"[4CC] YUY2 = {Encoding.ASCII.GetString(BitConverter.GetBytes(fourccYUY2))} (0x{fourccYUY2:X8})");
+			Log.Message($"[4CC] BC4U = {Encoding.ASCII.GetString(BitConverter.GetBytes(fourccBC4))} (0x{fourccBC4:X8})");
+			Log.Message($"[4CC] ATI2 = {Encoding.ASCII.GetString(BitConverter.GetBytes(fourccBC5))} (0x{fourccBC5:X8})");
+			#endif
+		}
 
-			// DDS images are flipped which ends up being a lot of pain with DXT compression not supporting pixel operations.
-			// There is a bitwise flipping algorithm out there, but I couldn't find one stable enough to be less hassle than this.
-			// Texture format has to be changed since RenderTexture doesn't support DXT.
-			// And we need RenderTexture because Blit needs it. And I don't know how else to flip it but Blit.
-			RenderTexture prev = RenderTexture.active;
-			RenderTexture flip = new RenderTexture(temp.width, temp.height, 0, RenderTextureFormat.ARGB32);
-			RenderTexture.active = flip;
-			Graphics.Blit(temp, flip, new Vector2(1, -1), new Vector2(0, 1));
+		// Skipped formats because bit masks don't fit into DWORD (32bit):
+		//   RGBAHalf   = R16 + G16 + B16 + A16 =  64 bits
+		//   RGFloat    = R32 + G32             =  64 bits
+		//   RGBAFloat  = R32 + G32 + B32 + A32 = 128 bits
+		//   RGB48      = R16 + G16 + B16       =  48 bits
+		//   RGBA64     = R16 + G16 + B16 + A16 =  64 bits
+		// Skipped formats because I couldn't figure out their associated TextureFormat:
+		//   BC4S, BC55
+		// Skipped formats because I couldn't figure out their mask/4cc:
+		//   RGB9e5Float, BC6H, BC7, DXT1Crunched, DXT5Crunched, ETC_RGB4,
+		//   EAC_*, ETC2_*, ASTC_*
+		// Skipped formats because my Unity doesn't have those TextureFormat enum values:
+		//   R8_SIGNED, RG16_SIGNED, RGBA_SIGNED,
+		//   R16_SIGNED, RG32_SIGNED, RGB48_SIGNED, RGBA64_SIGNED
+		private static TextureFormat? ParseTextureFormat(DDS_PixelFormat dds) {
+			if (dds.dwFlags.HasFlag(DDPF.FourCC)) {
+				if (dds.dwFourCC == fourccDXT1) return TextureFormat.DXT1;
+				if (dds.dwFourCC == fourccDXT5) return TextureFormat.DXT5;
+				if (dds.dwFourCC == fourccBC4) return TextureFormat.BC4;
+				if (dds.dwFourCC == fourccBC5) return TextureFormat.BC5;
+				if (dds.dwFourCC == fourccYUY2) return TextureFormat.YUY2;
+			} else if (dds.dwFlags.HasFlag(DDPF.RGB)) {
+				switch (dds.dwRGBBitCount) {
+					case 32:
+						if (CompareMask(dds, 0x000000FF, 0x0000FF00, 0x00FF0000, 0xFF000000)) return TextureFormat.RGBA32;
+						if (CompareMask(dds, 0x0000FF00, 0x00FF0000, 0xFF000000, 0x000000FF)) return TextureFormat.ARGB32;
+						if (CompareMask(dds, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000)) return TextureFormat.BGRA32;
+						if (CompareMask(dds, 0xFFFFFFFF, 0x00000000, 0x00000000)) return TextureFormat.RFloat;
+						if (CompareMask(dds, 0x0000FFFF, 0xFFFF0000, 0x00000000)) return TextureFormat.RG32;
+						if (CompareMask(dds, 0x0000FFFF, 0xFFFF0000, 0x00000000)) return TextureFormat.RGHalf;
+						break;
+					case 24:
+						if (CompareMask(dds, 0x0000FF, 0x00FF00, 0xFF0000)) return TextureFormat.RGB24;
+						break;
+					case 16:
+						if (CompareMask(dds, 0x00F0, 0x0F00, 0xF000, 0x000F)) return TextureFormat.ARGB4444;
+						if (CompareMask(dds, 0x001F, 0x07E0, 0xF800)) return TextureFormat.RGB565;
+						if (CompareMask(dds, 0xFFFF, 0x0000, 0x0000)) return TextureFormat.R16;
+						if (CompareMask(dds, 0x000F, 0x00F0, 0x0F00, 0xF000)) return TextureFormat.RGBA4444;
+						if (CompareMask(dds, 0xFFFF, 0x0000, 0x0000)) return TextureFormat.RHalf;
+						if (CompareMask(dds, 0x00FF, 0xFF00, 0x0000)) return TextureFormat.RG16;
+						break;
+					case 8:
+						if (CompareMask(dds, 0x00, 0x00, 0x00, 0xFF)) return TextureFormat.Alpha8;
+						if (CompareMask(dds, 0xFF, 0x00, 0x00)) return TextureFormat.R8;
+						break;
+				}
+			}
+			// Please don't make me go into DX10 extension...
+			return null;
+		}
 
-			tex.Reinitialize(temp.width, temp.height, TextureFormat.ARGB32, false);
-			tex.ReadPixels(new Rect(0, 0, temp.width, temp.height), 0, 0);
-			tex.Apply();
-			RenderTexture.active = prev;
+		private static bool CompareMask(DDS_PixelFormat dds, uint r, uint g, uint b) {
+			if (dds.dwFlags.HasFlag(DDPF.AlphaPixels)) return false;
+			return dds.dwRBitMask == r && dds.dwGBitMask == g && dds.dwBBitMask == b;
+		}
+		private static bool CompareMask(DDS_PixelFormat dds, uint r, uint g, uint b, uint a) {
+			if (!dds.dwFlags.HasFlag(DDPF.AlphaPixels)) return false;
+			return dds.dwRBitMask == r && dds.dwGBitMask == g && dds.dwBBitMask == b && dds.dwRGBAlphaBitMask == a;
+		}
 
-			// What's the point of using DDS if we convert it to RGB and lose memory/speed advantage of DXT?
-			// This will compress ARGB32 back into DXT5 using Unity's own stuff!
-			// And I'm fairly sure it will only do DXT5 and not DXT1 because there is an alpha channel in the flipped texture
-			// …and there's no non-alpha pixel format in GPU (which RenderTexture is), so we are stuck with ARGB32.
-			// There is RGB565, but it's supposedly old and bad.
-			// Maybe Unity is smart enough to notice how there are no transparent pixels and choose DXT1, I dunno.
-			// Not sure how much difference that makes either way.
-			tex.Compress(false);
-
-			UnityEngine.Object.Destroy(temp);
-			UnityEngine.Object.Destroy(flip);
+		public Texture2D CreateTexture() {
+			Texture2D tex = new Texture2D(Width, Height, Format, MipMapCount, false);
+			tex.LoadRawTextureData(DXT);
+			return tex;
 		}
 	}
 }
