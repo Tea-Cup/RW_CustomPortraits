@@ -1,10 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Patch>
-    <Operation Class="PatchOperationAdd" MayRequire="erdelf.HumanoidAlienRaces">
-        <xpath>/Defs/*[local-name()='AlienRace.ThingDef_AlienRace'][not(@Abstract='True')][not(comps)]</xpath>
-        <value>
-            <comps />
-        </value>
+    <Operation Class="PatchOperationSequence" MayRequire="erdelf.HumanoidAlienRaces">
+        <success>Always</success>
+        <operations>
+            <li Class="PatchOperationAdd">
+                <xpath>/Defs/*[local-name()='AlienRace.ThingDef_AlienRace'][not(@Abstract='True')][not(comps)]</xpath>
+                <value>
+                    <comps />
+                </value>
+            </li>
+        </operations>
     </Operation>
 
     <Operation Class="PatchOperationAdd" MayRequire="erdelf.HumanoidAlienRaces">
