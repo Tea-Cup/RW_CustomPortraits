@@ -166,6 +166,7 @@ namespace Foxy.CustomPortraits {
 		}
 
 		static DDS() {
+			/*
 			#if DEBUG
 			Log.Message($"[4CC] DXT1 = {Encoding.ASCII.GetString(BitConverter.GetBytes(fourccDXT1))} (0x{fourccDXT1:X8})");
 			Log.Message($"[4CC] DXT5 = {Encoding.ASCII.GetString(BitConverter.GetBytes(fourccDXT5))} (0x{fourccDXT5:X8})");
@@ -173,6 +174,7 @@ namespace Foxy.CustomPortraits {
 			Log.Message($"[4CC] BC4U = {Encoding.ASCII.GetString(BitConverter.GetBytes(fourccBC4))} (0x{fourccBC4:X8})");
 			Log.Message($"[4CC] ATI2 = {Encoding.ASCII.GetString(BitConverter.GetBytes(fourccBC5))} (0x{fourccBC5:X8})");
 			#endif
+			*/
 		}
 
 		// Skipped formats because bit masks don't fit into DWORD (32bit):
