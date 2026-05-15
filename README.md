@@ -102,6 +102,10 @@ _Normalize presentation of alternatives!_
 
 # ![Changelog](https://i.postimg.cc/k4T4mtyF/h-Changelog.png)
 
+#### 15.05.26
+
+- Fix \n being parsed as newline in paths
+
 #### 05.09.25
 
 - HAR compat errors fixed.
