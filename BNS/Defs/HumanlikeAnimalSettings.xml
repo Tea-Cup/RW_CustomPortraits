@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+    <BigAndSmall.HumanlikeAnimalSettings>
+        <defName>Foxy_HumanlikeAnimalSettings</defName>
+        <compWhitelist>
+            <li>Comp_FoxyPawnCustomPortrait</li>
+        </compWhitelist>
+    </BigAndSmall.HumanlikeAnimalSettings>
+</Defs>
