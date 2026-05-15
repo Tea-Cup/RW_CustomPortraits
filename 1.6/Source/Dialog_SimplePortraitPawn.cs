@@ -64,7 +64,7 @@ namespace Foxy.CustomPortraits {
 			}
 
 			bool advanced = false;
-			Widgets.CheckboxLabeled(advRect, Helper.Label("AdvancedPortrait"), ref advanced);
+			//Widgets.CheckboxLabeled(advRect, Helper.Label("AdvancedPortrait"), ref advanced);
 			if(advanced) {
 				Close();
 				StaticSettings.Advanced = true;

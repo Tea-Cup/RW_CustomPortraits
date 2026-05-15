@@ -65,8 +65,11 @@ namespace Foxy.CustomPortraits {
 		}
 
 		public virtual void ExposeData() {
+			string fn = filename;
 			Scribe_Values.Look(ref position, "position", null);
-			Scribe_Values.Look(ref filename, "filename", null);
+			Scribe_Values.Look(ref fn, "filename", null);
+			// Thanks, ParseHelper.ParseString!
+			filename = fn?.Replace("\n", "\\n");
 		}
 
 		public override string ToString() {
