@@ -75,38 +75,41 @@ namespace Foxy.CustomPortraits {
 		}
 
 		public static bool HasPortraitName(this Pawn pawn, PortraitPosition? position) {
+			Comp_FoxyPawnCustomPortrait comp = pawn.GetComp<Comp_FoxyPawnCustomPortrait>();
+			if (comp != null) return comp.Storage.HasFilename(position);
 			if (pawn.RaceProps.Animal) {
 				if (GameComponent_CustomPortraits.Instance == null) return false;
 				if (!GameComponent_CustomPortraits.Instance.animals.TryGetValue(pawn.def.defName, out var pp)) {
 					return false;
 				}
 				return pp.HasFilename(position);
-			} else {
-				return pawn.GetComp<Comp_FoxyPawnCustomPortrait>()?.Storage.HasFilename(position) ?? false;
 			}
+			return false;
 		}
 		public static string GetPortraitName(this Pawn pawn, PortraitPosition? position) {
+			Comp_FoxyPawnCustomPortrait comp = pawn.GetComp<Comp_FoxyPawnCustomPortrait>();
+			if (comp != null) return comp.Storage.GetFilename(position);
 			if (pawn.RaceProps.Animal) {
 				if (GameComponent_CustomPortraits.Instance == null) return null;
 				if (!GameComponent_CustomPortraits.Instance.animals.TryGetValue(pawn.def.defName, out var pp)) {
 					return null;
 				}
 				return pp.GetFilename(position);
-			} else {
-				return pawn.GetComp<Comp_FoxyPawnCustomPortrait>()?.Storage.GetFilename(position);
 			}
+			return null;
 		}
 		public static void SetPortraitName(this Pawn pawn, PortraitPosition? position, string filename) {
-			if (pawn.RaceProps.Animal) {
+			Comp_FoxyPawnCustomPortrait comp = pawn.GetComp<Comp_FoxyPawnCustomPortrait>();
+			if (comp != null) {
+				comp.Storage.SetSimple(position, filename);
+				RemoveCachedPortraits(pawn);
+				ModCompatibility.OwlsColonistBarResetCache();
+			} else if (pawn.RaceProps.Animal) {
 				if (GameComponent_CustomPortraits.Instance == null) return;
 				if (!GameComponent_CustomPortraits.Instance.animals.TryGetValue(pawn.def.defName, out var pp)) {
 					GameComponent_CustomPortraits.Instance.animals.Add(pawn.def.defName, pp = new PawnPortraits());
 				}
 				pp.SetSimple(position, filename);
-			} else {
-				pawn.GetComp<Comp_FoxyPawnCustomPortrait>()?.Storage.SetSimple(position, filename);
-				RemoveCachedPortraits(pawn);
-				ModCompatibility.OwlsColonistBarResetCache();
 			}
 		}
 		public static PawnPortraits GetPortraits(this Pawn pawn) {
