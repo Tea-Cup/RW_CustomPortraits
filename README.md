@@ -104,7 +104,9 @@ _Normalize presentation of alternatives!_
 
 #### 15.05.26
 
-- Fix \n being parsed as newline in paths
+- Fix \n being parsed as newline in paths.
+- [Big and Small - Framework](https://steamcommunity.com/workshop/filedetails/?id=2925432336) support.
+- Fixed red patch error with HAR (Thanks [talonos2](https://github.com/Tea-Cup/RW_CustomPortraits/pull/2))
 
 #### 05.09.25
 
